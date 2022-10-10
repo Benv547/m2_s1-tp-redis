@@ -62,8 +62,8 @@ public class ArticleCmd {
     }
 
     public static void addVote(RedisCommands<String, String> cmd, String articleId, String utilisateur) {
-        // check if article.timestamp < article.timestamp + UNE_SEMAINE to allow user to vote;
-        // check if user hasn't already voted
+        // TODO: check if article.timestamp < article.timestamp + UNE_SEMAINE to allow user to vote;
+        // TODO: check if user hasn't already voted
 
         String article = "article:" + articleId;
         String articleSelectionne = "selectionne:" + articleId;
@@ -102,7 +102,7 @@ public class ArticleCmd {
     }
 
     public static void addArticleToGroup (RedisCommands<String, String> cmd, String articleId, String groupe) {
-        // check if not already present in set
+        // TODO: check if not already present in set
 
         String categorie = "catégorie:" + groupe;
         String article = "article:" + articleId;
@@ -110,10 +110,13 @@ public class ArticleCmd {
     }
 
     public static void removeArticleToGroup (RedisCommands<String, String> cmd, String articleId, String groupe) {
-        // check if present in set
+        // TODO: check if present in set
 
         String categorie = "catégorie:" + groupe;
         String article = "article:" + articleId;
         cmd.srem(categorie, article);
     }
+
+    // TODO: getScoresOfGroupe
+    // Écrire une méthode qui permette d’obtenir les scores des articles d’une catégorie donnée.
 }

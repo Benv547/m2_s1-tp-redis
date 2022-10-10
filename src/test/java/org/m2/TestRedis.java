@@ -44,6 +44,7 @@ class TestRedis {
 
     @Test
     void testAjoutArticle() {
+        // TODO
         ArticleCmd.ajoutArticle(cmd, "robert", "title", "url");
     }
 }
