@@ -3,15 +3,18 @@ package org.m2;
 import io.lettuce.core.MapScanCursor;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScoredValue;
+import io.lettuce.core.ScoredValueScanCursor;
 import io.lettuce.core.api.sync.*;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ArticleCmd {
-    private static final Long UNE_SEMAINE = Long.valueOf(7000);
+    private static final Long UNE_SEMAINE = Long.valueOf(700000000);
     private static final Long SCORE_FOR_VOTE = Long.valueOf(197);
 
     public void test () {
@@ -54,7 +57,13 @@ public class ArticleCmd {
         return articleId;
     }
 
-    private static String addScoreArticle(RedisCommands<String, String> cmd, String articleId, long scoreValue) {
+    public static Article getArticle(RedisCommands<String, String> cmd, String articleId) {
+        String a = articleId;
+        Map<String,String> article = cmd.hscan(a).getMap();
+        return new Article(a, article.get("titre"), article.get("lien"), article.get("utilisateur"), article.get("timestamp"), article.get("nbvotes"));
+    }
+
+    public static String addScoreArticle(RedisCommands<String, String> cmd, String articleId, long scoreValue) {
         String score = "score:";
         String article = "article:" + articleId;
         String newScore = String.valueOf(cmd.zincrby(score, scoreValue, article));
@@ -62,11 +71,15 @@ public class ArticleCmd {
     }
 
     public static void addVote(RedisCommands<String, String> cmd, String articleId, String utilisateur) {
-        // TODO: check if article.timestamp < article.timestamp + UNE_SEMAINE to allow user to vote;
-        // TODO: check if user hasn't already voted
 
         String article = "article:" + articleId;
         String articleSelectionne = "selectionne:" + articleId;
+
+        // Check if user hasn't already voted
+        if (cmd.sismember(articleSelectionne, utilisateur)) {
+            return;
+        }
+
         cmd.sadd(articleSelectionne, utilisateur);
         cmd.expire(articleSelectionne, UNE_SEMAINE);
 
@@ -102,21 +115,43 @@ public class ArticleCmd {
     }
 
     public static void addArticleToGroup (RedisCommands<String, String> cmd, String articleId, String groupe) {
-        // TODO: check if not already present in set
-
         String categorie = "catégorie:" + groupe;
         String article = "article:" + articleId;
+
+        // Check if not already present in set
+        if (cmd.sismember(categorie, article)) {
+            return;
+        }
+
         cmd.sadd(categorie, article);
     }
 
     public static void removeArticleToGroup (RedisCommands<String, String> cmd, String articleId, String groupe) {
-        // TODO: check if present in set
-
         String categorie = "catégorie:" + groupe;
         String article = "article:" + articleId;
+
+        // Check if not present in set
+        if (!cmd.sismember(categorie, article)) {
+            return;
+        }
+
         cmd.srem(categorie, article);
     }
 
-    // TODO: getScoresOfGroupe
-    // Écrire une méthode qui permette d’obtenir les scores des articles d’une catégorie donnée.
+    public static HashMap<String, Double> getScoresOfGroupe (RedisCommands<String, String> cmd, String groupe) {
+        HashMap<String, Double> result = new HashMap<>();
+
+        String categorie = "catégorie:" + groupe;
+        List<String> listGroupe = cmd.sscan(categorie).getValues();
+
+        String score = "score:";
+        List<ScoredValue<String>> scores = cmd.zrevrangeWithScores(score, 0, -1);
+        for (ScoredValue scoredValue: scores) {
+            if (listGroupe.contains(scoredValue.getValue())) {
+                result.put(scoredValue.getValue().toString(), scoredValue.getScore());
+            }
+        }
+
+        return result;
+    }
 }

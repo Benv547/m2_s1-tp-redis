@@ -9,9 +9,7 @@ La structure Redis la plus appropriée est le **Hash** permettant sur un hash do
 La structure Redis la plus appropriée est le **Sorted Set**.
 
 ### c. Même question que précédemment concernant la structure.
-La structure Redis la plus appropriée est la **List**.
-
-## 4.
+La structure Redis la plus appropriée est le **Set** pour éviter les doublons.
 
 
 
